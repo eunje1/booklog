@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookLog - 나만의 독서 기록 웹사이트</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* 폰트 세팅 및 스타일 보완 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; }
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <nav id="mainNav" class="bg-white shadow-sm border-b border-slate-200 hidden-view">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-indigo-600 cursor-pointer" onclick="switchView('libraryView')">📚 BookLog</h1>
+            <div class="flex items-center gap-4">
+                <span id="userNickname" class="text-sm font-medium text-slate-600"></span>
+                <button onclick="switchView('searchView')" class="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition">🔍 도서 검색</button>
+                <button onclick="handleLogout()" class="text-sm text-slate-400 hover:text-rose-500 transition">로그아웃</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        
+        <section id="loginView" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-md mt-12">
+            <h2 class="text-2xl font-bold text-center mb-6 text-indigo-600">📚 BookLog 로그인</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">이메일 주소</label>
+                    <input type="email" id="loginEmail" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500" placeholder="example@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">비밀번호</label>
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500" placeholder="••••••••">
+                </div>
+                <div id="loginError" class="text-rose-500 text-xs hidden-view"></div>
+                <button onclick="handleLogin()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-bold hover:bg-indigo-700 transition">로그인</button>
+                <p class="text-center text-sm text-slate-500 mt-4">계정이 없으신가요? <span onclick="switchView('signupView')" class="text-indigo-600 cursor-pointer underline">회원가입</span></p>
+            </div>
+        </section>
+
+        <section id="signupView" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-md mt-12 hidden-view">
+            <h2 class="text-2xl font-bold text-center mb-6 text-indigo-600">회원가입</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">이메일 주소</label>
+                    <input type="email" id="signupEmail" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500" placeholder="example@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">닉네임</label>
+                    <input type="text" id="signupNickname" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500" placeholder="2~20자 제한">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">비밀번호</label>
+                    <input type="password" id="signupPassword" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">비밀번호 확인</label>
+                    <input type="password" id="signupPasswordCheck" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-indigo-500" placeholder="••••••••">
+                </div>
+                <div id="signupError" class="text-rose-500 text-xs hidden-view"></div>
+                <button onclick="handleSignup()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-bold hover:bg-indigo-700 transition">가입하기</button>
+                <p class="text-center text-sm text-slate-500 mt-4">이미 계정이 있나요? <span onclick="switchView('loginView')" class="text-indigo-600 cursor-pointer underline">로그인</span></p>
+            </div>
+        </section>
+
+        <section id="libraryView" class="hidden-view">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">내 서재</h2>
+                <div class="flex gap-2">
+                    <button onclick="filterLibrary('all')" class="px-3 py-1 rounded-full bg-indigo-600 text-white text-sm" id="btn-filter-all">전체</button>
+                    <button onclick="filterLibrary('읽을 책')" class="px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-sm" id="btn-filter-읽을">읽을 책</button>
+                    <button onclick="filterLibrary('읽는 중')" class="px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-sm" id="btn-filter-읽는">읽는 중</button>
+                    <button onclick="filterLibrary('완독')" class="px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-sm" id="btn-filter-완독">완독</button>
+                </div>
+            </div>
+            
+            <div id="libraryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+        </section>
+
+        <section id="searchView" class="hidden-view">
+            <h2 class="text-2xl font-bold mb-6">도서 검색 및 추가</h2>
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="searchKeyword" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-indigo-500" placeholder="책 제목, 저자명 또는 ISBN을 검색해 보세요.">
+                <button onclick="searchBooks()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition">검색</button>
+            </div>
+
+            <div id="searchResults" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
+        </section>
+
+        <section id="detailView" class="hidden-view max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <button onclick="switchView('libraryView')" class="text-sm text-slate-500 hover:text-indigo-600 mb-4 inline-block">← 서재로 돌아가기</button>
+            
+            <div id="bookDetailHeader" class="flex gap-4 border-b border-slate-100 pb-6 mb-6">
+                </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-slate-50 p-4 rounded-xl">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-500 mb-2">📊 독서 진척도</h3>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="number" id="currentPages" class="w-20 px-2 py-1 border border-slate-300 rounded text-center" min="0">
+                        <span class="text-sm text-slate-500">/ <span id="totalPagesSpan">0</span> 쪽</span>
+                        <button onclick="updateProgress()" class="bg-slate-700 text-white text-xs px-2 py-1 rounded hover:bg-slate-800">저장</button>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div id="detailProgressBar" class="bg-indigo-600 h-full" style="width: 0%"></div>
+                    </div>
+                    <p id="progressPercent" class="text-xs text-right text-slate-500 mt-1">0% 완료</p>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-sm text-slate-500 mb-2">📅 독서 기간</h3>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between"><span>시작일:</span> <input type="date" id="startDateInput" onchange="updateDates()"></div>
+                        <div class="flex justify-between"><span>완독일:</span> <input type="date" id="endDateInput" onchange="updateDates()"></div>
+                        <div class="text-xs text-right text-indigo-600 font-semibold mt-1" id="durationDays">소요 일수: -일</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="border-t border-slate-100 pt-4">
+                    <h3 class="font-bold text-lg mb-3">📝 서평 (리뷰)</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium">별점:</span>
+                            <select id="reviewRating" class="border border-slate-300 rounded px-2 py-1 text-sm">
+                                <option value="5.0">⭐⭐⭐⭐⭐ (5.0)</option>
+                                <option value="4.0">⭐⭐⭐⭐ (4.0)</option>
+                                <option value="3.0">⭐⭐⭐ (3.0)</option>
+                                <option value="2.0">⭐⭐ (2.0)</option>
+                                <option value="1.0">⭐ (1.0)</option>
+                            </select>
+                        </div>
+                        <input type="text" id="reviewSummary" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="한 줄 평을 입력하세요 (최대 100자)">
+                        <textarea id="reviewContent" rows="4" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="상세한 독후감을 작성해 보세요."></textarea>
+                        <button onclick="saveReview()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition text-sm">서평 저장하기</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 가상의 가짜 도서 검색 API 데이터베이스 (외부 API 응답 지연 및 CORS 제한 방지용)
+        const mockBooksDatabase = [
+            { id: "1", isbn: "9788937460753", title: "인간 실격", author: "다자이 오사마", publisher: "민음사", cover_url: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=150", page_count: 192 },
+            { id: "2", isbn: "9788936434267", title: "소년이 온다", author: "한강", publisher: "창비", cover_url: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=150", page_count: 216 },
+            { id: "3", isbn: "9788932917245", title: "사피엔스", author: "유발 하라리", publisher: "김영사", cover_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=150", page_count: 636 },
+            { id: "4", isbn: "9788954655971", title: "여행의 이유", author: "김영하", publisher: "문학동네", cover_url: "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=150", page_count: 432 }
+        ];
+
+        // 상태 관리 변수
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        let myLibrary = JSON.parse(localStorage.getItem('myLibrary')) || [];
+        let currentSelectedBookId = null;
+        let currentFilter = 'all';
+
+        // 뷰 전환 함수
+        function switchView(viewId) {
+            ['loginView', 'signupView', 'libraryView', 'searchView', 'detailView'].forEach(id => {
+                document.getElementById(id).classList.add('hidden-view');
+            });
+            document.getElementById(viewId).classList.remove('hidden-view');
+
+            if (currentUser) {
+                document.getElementById('mainNav').classList.remove('hidden-view');
+                document.getElementById('userNickname').innerText = `👋 ${currentUser.nickname}님`;
+            } else {
+                document.getElementById('mainNav').classList.add('hidden-view');
+            }
+
+            if(viewId === 'libraryView') renderLibrary();
+        }
+
+        // 회원가입 로직
+        function handleSignup() {
+            const email = document.getElementById('signupEmail').value;
+            const nickname = document.getElementById('signupNickname').value;
+            const password = document.getElementById('signupPassword').value;
+            const passwordCheck = document.getElementById('signupPasswordCheck').value;
+            const errorDiv = document.getElementById('signupError');
+
+            if(!email || !nickname || !password) {
+                errorDiv.innerText = "모든 필드를 입력해주세요.";
+                errorDiv.classList.remove('hidden-view');
+                return;
+            }
+            if(password !== passwordCheck) {
+                errorDiv.innerText = "비밀번호가 일치하지 않습니다.";
+                errorDiv.classList.remove('hidden-view');
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            if(users.some(u => u.email === email)) {
+                errorDiv.innerText = "이미 존재하는 이메일입니다.";
+                errorDiv.classList.remove('hidden-view');
+                return;
+            }
+
+            users.push({ email, nickname, password });
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('회원가입 완료! 로그인 해주세요.');
+            switchView('loginView');
+        }
+
+        // 로그인 로직
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if(user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                switchView('libraryView');
+            } else {
+                errorDiv.innerText = "이메일 또는 비밀번호를 확인하세요.";
+                errorDiv.classList.remove('hidden-view');
+            }
+        }
+
+        // 로그아웃
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            switchView('loginView');
+        }
+
+        // 가짜 데이터 기반 검색 함수
+        function searchBooks() {
+            const kw = document.getElementById('searchKeyword').value.toLowerCase();
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '';
+
+            const filtered = mockBooksDatabase.filter(b => b.title.toLowerCase().includes(kw) || b.author.toLowerCase().includes(kw));
+
+            if(filtered.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-slate-400 text-sm py-4">검색 결과가 없습니다. (힌트: 인간 실격, 소년이 온다, 사피엔스, 여행의 이유)</p>';
+                return;
+            }
+
+            filtered.forEach(book => {
+                const isAdded = myLibrary.some(b => b.id === book.id);
+                resultsDiv.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex gap-4 items-center shadow-sm">
+                        <img src="${book.cover_url}" class="w-16 h-24 object-cover bg-slate-100 rounded shadow-sm">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-base">${book.title}</h4>
+                            <p class="text-xs text-slate-500">${book.author} | ${book.publisher}</p>
+                            <p class="text-xs text-slate-400 mt-1">ISBN: ${book.isbn}</p>
+                            <button onclick="addToLibrary('${book.id}')" ${isAdded ? 'disabled' : ''} class="mt-2 text-xs font-bold px-3 py-1.5 rounded-md ${isAdded ? 'bg-slate-100 text-slate-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'}">
+                                ${isAdded ? '이미 서재에 있음' : '내 서재에 추가'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 내 서재에 추가
+        function addToLibrary(bookId) {
+            if(myLibrary.some(b => b.id === bookId)) return;
+            const bookSrc = mockBooksDatabase.find(b => b.id === bookId);
+            
+            const newBook = {
+                ...bookSrc,
+                status: '읽을 책',
+                current_page: 0,
+                start_date: '',
+                end_date: '',
+                review: { rating: '5.0', summary: '', content: '' }
+            };
+
+            myLibrary.push(newBook);
+            localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
+            alert(`'${newBook.title}'이(가) 내 서재에 등록되었습니다.`);
+            switchView('libraryView');
+        }
+
+        // 내 서재 필터링 변경
+        function filterLibrary(status) {
+            currentFilter = status;
+            ['all', '읽을', '읽는', '완독'].forEach(s => {
+                const btn = document.getElementById(`btn-filter-${s}`);
+                if(s === (status === 'all' ? 'all' : status.substring(0,2))) {
+                    btn.className = "px-3 py-1 rounded-full bg-indigo-600 text-white text-sm";
+                } else {
+                    btn.className = "px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-sm";
+                }
+            });
+            renderLibrary();
+        }
+
+        // 내 서재 렌더링
+        function renderLibrary() {
+            const grid = document.getElementById('libraryGrid');
+            grid.innerHTML = '';
+
+            const filtered = currentFilter === 'all' ? myLibrary : myLibrary.filter(b => b.status === currentFilter);
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">서재가 비어있거나 해당하는 책이 없습니다.</div>`;
+                return;
+            }
+
+            filtered.forEach(book => {
+                const progress = Math.round((book.current_page / book.page_count) * 100) || 0;
+                grid.innerHTML += `
+                    <div onclick="openBookDetail('${book.id}')" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex gap-4">
+                        <img src="${book.cover_url}" class="w-20 h-28 object-cover rounded shadow-sm">
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${book.status==='완독'?'bg-emerald-100 text-emerald-700':book.status==='읽는 중'?'bg-amber-100 text-amber-700':'bg-slate-100 text-slate-600'}">${book.status}</span>
+                                <h3 class="font-bold text-base mt-1 line-clamp-1">${book.title}</h3>
+                                <p class="text-xs text-slate-400">${book.author}</p>
+                            </div>
+                            <div class="w-full">
+                                <div class="flex justify-between text-[11px] text-slate-500 mb-1">
+                                    <span>진척도</span><span>${progress}%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-indigo-600 h-full" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 책 상세 조회 화면 진입
+        function openBookDetail(bookId) {
+            currentSelectedBookId = bookId;
+            const book = myLibrary.find(b => b.id === bookId);
+            
+            // 상단 기본 정보 세팅
+            document.getElementById('bookDetailHeader').innerHTML = `
+                <img src="${book.cover_url}" class="w-24 h-36 object-cover rounded-lg shadow">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <select onchange="updateBookStatus(this.value)" class="border border-indigo-200 text-xs font-bold px-2 py-1 rounded bg-indigo-50 text-indigo-700">
+                            <option value="읽을 책" ${book.status==='읽을 책'?'selected':''}>읽을 책</option>
+                            <option value="읽는 중" ${book.status==='읽는 중'?'selected':''}>읽는 중</option>
+                            <option value="완독" ${book.status==='완독'?'selected':''}>완독</option>
+                        </select>
+                        <button onclick="deleteBook('${book.id}')" class="text-xs text-rose-500 hover:underline ml-4">책 삭제</button>
+                    </div>
+                    <h2 class="text-xl font-bold">${book.title}</h2>
+                    <p class="text-sm text-slate-500">${book.author} | ${book.publisher}</p>
+                    <p class="text-xs text-slate-400 mt-1">ISBN: ${book.isbn} | 총 ${book.page_count}p</p>
+                </div>
+            `;
+
+            // 진척도 필드 세팅
+            document.getElementById('currentPages').value = book.current_page;
+            document.getElementById('totalPagesSpan').innerText = book.page_count;
+            
+            // 날짜 필드 세팅
+            document.getElementById('startDateInput').value = book.start_date || '';
+            document.getElementById('endDateInput').value = book.end_date || '';
+
+            // 서평 필드 세팅
+            document.getElementById('reviewRating').value = book.review?.rating || '5.0';
+            document.getElementById('reviewSummary').value = book.review?.summary || '';
+            document.getElementById('reviewContent').value = book.review?.content || '';
+
+            refreshProgressUI(book);
+            updateDates();
+            switchView('detailView');
+        }
+
+        // 독서 상태 변경 함수
+        function updateBookStatus(newStatus) {
+            const book = myLibrary.find(b => b.id === currentSelectedBookId);
+            book.status = newStatus;
+            if(newStatus === '완독') {
+                book.current_page = book.page_count;
+                document.getElementById('currentPages').value = book.page_count;
+            }
+            localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
+            refreshProgressUI(book);
+        }
+
+        // 페이지 진척도 저장
+        function updateProgress() {
+            const book = myLibrary.find(b => b.id === currentSelectedBookId);
+            let inputPage = parseInt(document.getElementById('currentPages').value) || 0;
+
+            if(inputPage > book.page_count) inputPage = book.page_count;
+            if(inputPage < 0) inputPage = 0;
+
+            book.current_page = inputPage;
+            document.getElementById('currentPages').value = inputPage;
+
+            if(book.current_page === book.page_count) {
+                book.status = '완독';
+            } else if(book.current_page > 0) {
+                book.status = '읽는 중';
+            }
+
+            localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
+            refreshProgressUI(book);
+            openBookDetail(book.id); // 상단 배지 동기화용 리로드
+        }
+
+        // 진척도 그래픽 요소 리프레시
+        function refreshProgressUI(book) {
+            const progress = Math.round((book.current_page / book.page_count) * 100) || 0;
+            document.getElementById('detailProgressBar').style.width = `${progress}%`;
+            document.getElementById('progressPercent').innerText = `${progress}% 완료`;
+        }
+
+        // 날짜 차이 계산 기능
+        function updateDates() {
+            const book = myLibrary.find(b => b.id === currentSelectedBookId);
+            const start = document.getElementById('startDateInput').value;
+            const end = document.getElementById('endDateInput').value;
+
+            book.start_date = start;
+            book.end_date = end;
+            localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
+
+            if(start && end) {
+                const sDate = new Date(start);
+                const eDate = new Date(end);
+                const diffTime = eDate - sDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                
+                if(diffDays > 0) {
+                    document.getElementById('durationDays').innerText = `소요 일수: ${diffDays}일`;
+                } else {
+                    document.getElementById('durationDays').innerText = `완독일 오류 (시작일 이후 선택)`;
+                }
+            } else {
+                document.getElementById('durationDays').innerText = `소요 일수: -일`;
+            }
+        }
+
+        // 서평 데이터 저장
+        function saveReview() {
+            const book = myLibrary.find(b => b.id === currentSelectedBookId);
+            book.review = {
+                rating: document.getElementById('reviewRating').value,
+                summary: document.getElementById('reviewSummary').value,
+                content: document.getElementById('reviewContent').value
+            };
+
+            localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
+            alert('서평이 영구 저장되었습니다!');
+        }
+
+        // 책 삭제 기능
+        function deleteBook(bookId) {
+            if(confirm('정말 삭제하시겠습니까? 관련 데이터가 모두 소멸합니다.')) {
+                myLibrary = myLibrary.filter(b => b.id !== bookId);
+                localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
+                switchView('libraryView');
+            }
+        }
+
+        // 앱 초기 실행 진입점 (기본으로 로그인 화면 노출)
+        window.onload = function() {
+            if(currentUser) {
+                switchView('libraryView');
+            } else {
+                switchView('loginView');
+            }
+        }
+    </script>
+</body>
+</html>
